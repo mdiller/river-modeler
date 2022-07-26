@@ -6,7 +6,7 @@ import os
 import typing
 
 print("loading data")
-with open("elevation_data_big.json", "r") as f:
+with open("elevation_data.json", "r") as f:
 	data = json.loads(f.read())
 
 # data = data[:len(data) // 2]
@@ -32,7 +32,7 @@ vertices = np.array(vertex_data)
 flat_vertices = np.array(flat_vertex_data)
 
 # SCIPY IMPLEMENTATION
-triangle_file = "triangles_big.json"
+triangle_file = "triangles.json"
 
 if True: # not os.path.exists(triangle_file):
 	print("generating triangles")

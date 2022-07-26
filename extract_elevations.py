@@ -220,7 +220,7 @@ for image_path in image_paths:
 			})
 	
 print(f"found {len(elevation_data)} points")
-with open("elevation_data_big.json", "w+") as f:
+with open("elevation_data.json", "w+") as f:
 	f.write(json.dumps(elevation_data))
 
 
