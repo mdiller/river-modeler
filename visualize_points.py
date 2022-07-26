@@ -1,8 +1,5 @@
 import numpy as np
-import pyvista as pv
 import json
-import math
-import os
 import typing
 
 print("loading data")
@@ -195,10 +192,10 @@ while True:
 	if count != 0:
 		triangles.append([ new_index, index, new_index - 1 ])
 
-	index = next_index
-	if index == start_edge_vertex:
-		print("done!")
+	if next_index == start_edge_vertex:
+		triangles.append([ v_count, start_edge_vertex, new_index ])
 		break
+	index = next_index
 	count += 1
 
 print("rebuiling vertices and triangles for display")
@@ -249,43 +246,3 @@ with open("out.obj", "w+") as f:
 	f.write(text)
 
 exit(0)
-
-# OPEN3D IMPLEMENTATION
-import open3d as o3d
-print("drawing")
-
-# # Displaying: point cloud
-# pcd = o3d.geometry.PointCloud()
-# pcd.points = o3d.utility.Vector3dVector(vertices)
-# o3d.io.write_point_cloud("test.ply", pcd)
-# pcd_load = o3d.io.read_point_cloud("test.ply")
-# o3d.visualization.draw_geometries([pcd_load])
-
-# # Displaying: edge lines
-# line_set = o3d.geometry.LineSet()
-# line_set.points = o3d.utility.Vector3dVector(vertices)
-# line_set.lines = o3d.utility.Vector2iVector(outside_edges)
-# o3d.visualization.draw_geometries([line_set])
-
-# Displaying: triangle mesh
-mesh = o3d.geometry.TriangleMesh()
-mesh.vertices=o3d.utility.Vector3dVector(vertices)
-mesh.triangles=o3d.utility.Vector3iVector(triangles)
-mesh.compute_triangle_normals()
-mesh.compute_vertex_normals()
-o3d.visualization.draw_geometries([mesh])
-
-
-
-# PYVISTA IMPLEMENTATION
-
-
-# # points is a 3D numpy array (n_points, 3) coordinates of a sphere
-# cloud = pv.PolyData(vertices)
-# # cloud.plot()
-
-# volume = cloud.delaunay_2d(alpha=60)
-# print("done creating mesh")
-# print("plotting")
-# volume.plot()
-# print("done!")

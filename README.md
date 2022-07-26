@@ -2,6 +2,8 @@
 
 I started with the idea of being able to 3D print a heightmap of the Rogue River canyon. I decided to try to build a more general solution to this problem so that you could apply this to any river. In its current state it is a bit all over the place and not super clean. I may attempt to revisit this and create a webpage out of it for an easier-to-use user experience.
 
+![](docs/preview_example.png)
+
 # TODOs
 
 The main todos for this project at the point of the repo's creation
@@ -20,6 +22,10 @@ Heres some more todos that are lower priority but would be nice to do after i st
   - [ ] need a better way of passing the data between parts of the script
 - [ ] make it run on a website so other people could use it (python webassembly probably)
   - [ ] make input/search boxes based on osm for selecting river, start/end points, and points of interest
+
+# libraries
+- rasterio
+- overpy
 
 
 # some links
