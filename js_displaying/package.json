@@ -1,0 +1,19 @@
+{
+  "name": "riverproj",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.9.3"
+  },
+  "dependencies": {
+    "js-3d-model-viewer": "^0.1.7",
+    "three": "^0.142.0"
+  }
+}

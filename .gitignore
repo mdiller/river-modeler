@@ -1,7 +1,8 @@
 cache/
 node_modules/
-./*.json
+/*.json
 *.obj
 *.png
 temp/
 testgdb/
+*.tif
