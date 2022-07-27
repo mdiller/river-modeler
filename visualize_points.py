@@ -1,10 +1,45 @@
 import numpy as np
 import json
+import math
 import typing
 
 print("loading data")
 with open("elevation_data.json", "r") as f:
 	data = json.loads(f.read())
+
+xy_origin = data["origin"]
+elevation_data = data["points"]
+
+
+def point_distance(p1, p2):
+	if isinstance(p1, RichVertex):
+		p1 = { "x": p1.x, "y": p1.y }
+	if isinstance(p2, RichVertex):
+		p2 = { "x": p2.x, "y": p2.y }
+	a = p2["x"] - p1["x"]
+	b = p2["y"] - p1["y"]
+	return math.sqrt(a * a + b * b)
+
+# haversine formula: gets the distance (in meters) between 2 latlong points
+def lat_long_distance(lat1, lon1, lat2, lon2):
+	radius_of_earth_meters = 6378100 # meters
+	# convert decimal degrees to radians 
+	lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+	# haversine formula 
+	dlon = lon2 - lon1 
+	dlat = lat2 - lat1 
+	a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+	c = 2 * math.asin(math.sqrt(a)) 
+	return c * radius_of_earth_meters
+
+# give the xy coordinates of the given latlon location. (xy is just meters east&north from xy_origin)
+def latlong_to_xy(point):
+	x = lat_long_distance(point["lat"], xy_origin["lon"], point["lat"], point["lon"])
+	y = lat_long_distance(xy_origin["lat"], point["lon"], point["lat"], point["lon"])
+	return {
+		"x": x,
+		"y": y
+	}
 
 # data = data[:len(data) // 2]
 
@@ -13,7 +48,7 @@ elevation_modifier = 1
 print("putting vertexes in arrays")
 flat_vertex_data = []
 vertex_data = []
-for point in data:
+for point in elevation_data:
 	vertex_data.append([
 		point["x"],
 		point["y"],
@@ -155,6 +190,12 @@ for i in range(len(triangles)):
 			if vert != vert2 and vert2 not in rich_verts[vert].neighbors:
 				rich_verts[vert].neighbors.append(vert2)
 
+
+print("convert river points to xy coordinates")
+with open("river_points.json", "r") as f:
+	river_points = json.loads(f.read())
+river_points = list(map(latlong_to_xy, river_points))
+
 print("do edge vertex work")
 
 print("find an edge vertex")
@@ -163,11 +204,10 @@ for vert in rich_verts:
 	index = vert.get_edge_next()
 	if index is not None:
 		start_edge_vertex = index
-
-
+		break
 
 # go thru all edge vertexes and create points below em
-print("iterating thru edge vertices")
+print("iterating thru edge vertices to create walls")
 base_z = lowest_z - ((highest_z - lowest_z) * 0.1)
 v_count = len(rich_verts)
 count = 0
@@ -198,32 +238,69 @@ while True:
 	index = next_index
 	count += 1
 
+print("creating a base")
+
+print("make a list of edge points, and arrange it to start near the start of the river")
+smallest_dist = math.inf
+smallest_dist_index = -1
+river1 = river_points[0]
+river2 = river_points[1]
+index = start_edge_vertex
+edge_points = []
+i = 0
+while True:
+	vert = rich_verts[index]
+	edge_points.append(vert)
+	dist1 = point_distance(vert, river1)
+	dist2 = point_distance(vert, river2)
+	if dist1 < dist2 and dist1 < smallest_dist:
+		smallest_dist = dist1
+		smallest_dist_index = i
+
+	i += 1
+	index = vert.get_edge_next()
+	if index == start_edge_vertex:
+		break
+# re-arrange
+edge_points = edge_points[smallest_dist_index:] + edge_points[:smallest_dist_index]
+
+# TODO: iterate thru river points, and connect them to edge points as we go
+print("iterate thru river points to create base")
+starting_vertex_count = len(rich_verts)
+edge_index_1 = 0
+edge_index_2 = len(edge_points) - 1
+for i in range(len(river_points) - 1):
+	point = river_points[i]
+	next_point = river_points[i + 1]
+
+	new_vert = RichVertex()
+	new_vert.x = point["x"]
+	new_vert.y = point["y"]
+	new_vert.z = base_z
+	new_vert.index = starting_vertex_count + i
+	new_vert.neighbors = [] # these just blank we dont care about em
+	new_vert.triangles = [] # these just blank we dont care about em
+	rich_verts.append(new_vert)
+
+	# for both directions along the edge, connect triangles until we get to a point that is closer to the next point
+	while (point_distance(edge_points[edge_index_1], point) < point_distance(edge_points[edge_index_1], next_point)) and edge_index_1 != edge_index_2:
+		triangles.append([ new_vert.index, edge_points[edge_index_1].index, edge_points[edge_index_1 + 1].index ])
+		edge_index_1 += 1
+		
+	while (point_distance(edge_points[edge_index_2], point) < point_distance(edge_points[edge_index_2], next_point)) and edge_index_1 != edge_index_2:
+		triangles.append([ new_vert.index, edge_points[edge_index_2].index, edge_points[edge_index_2 - 1].index ])
+		edge_index_2 -= 1
+
+
+	# at the end, create 2 triangles, one to each side, that complete the thing (unless this is the last point)
+	if i < (len(river_points) - 2):
+		triangles.append([ new_vert.index, new_vert.index + 1, edge_points[edge_index_1].index ])
+		triangles.append([ new_vert.index, edge_points[edge_index_2].index, new_vert.index + 1 ])
+
+
 print("rebuiling vertices and triangles for display")
 vertices = np.array(list(map(lambda v: [v.x, v.y, v.z], rich_verts)))
 triangles = np.array(triangles).astype(np.int32)
-
-# print("adding new vertices to create a solid")
-# new_vertices = []
-# v_increment = 15
-# base_elevation = (min(map(lambda p: p[2], vertex_data)) - 5) * elevation_modifier
-# for i in range(len(vertex_data)):
-# 	p = vertex_data[i]
-# 	new_vertices.append((
-# 		p[0],
-# 		p[1],
-# 		base_elevation
-# 	))
-# 	if i in outside_points: # add points up from the bottom
-# 		y = base_elevation + v_increment
-# 		while y < p[2]:
-# 			new_vertices.append((
-# 				p[0],
-# 				p[1],
-# 				y
-# 			))
-# 			y += v_increment
-# vertex_data.extend(new_vertices)
-# vertices = np.array(vertex_data)
 
 print("stats: ")
 print(f" - {len(vertices)} vertices")

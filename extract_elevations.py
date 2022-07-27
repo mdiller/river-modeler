@@ -25,15 +25,15 @@ def add_lat(lat, lon, meters):
 
 # haversine formula: gets the distance (in meters) between 2 latlong points
 def lat_long_distance(lat1, lon1, lat2, lon2):
-    # convert decimal degrees to radians 
-    lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+	# convert decimal degrees to radians 
+	lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
 
-    # haversine formula 
-    dlon = lon2 - lon1 
-    dlat = lat2 - lat1 
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-    c = 2 * math.asin(math.sqrt(a)) 
-    return c * radius_of_earth_meters
+	# haversine formula 
+	dlon = lon2 - lon1 
+	dlat = lat2 - lat1 
+	a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+	c = 2 * math.asin(math.sqrt(a)) 
+	return c * radius_of_earth_meters
 
 
 print("prebuilding chunks and bounding box...")
@@ -171,7 +171,7 @@ print("loading image(s)")
 with open(tiff_files_list, "r") as f:
 	image_paths = json.loads(f.read())
 
-elevation_data = []
+points = []
 for image_path in image_paths:
 	print("loading: " + image_path)
 	with rasterio.open(image_path) as src:
@@ -211,15 +211,23 @@ for image_path in image_paths:
 			lon = good_points[i][0]
 			x = ((lon - bbox.min_lon) / bbox.lon_size) * meters_x
 			y = ((lat - bbox.min_lat) / bbox.lat_size) * meters_y
-			elevation_data.append({
+			points.append({
 				"lat": lat,
 				"lon": lon,
 				"x": x,
 				"y": y,
 				"elevation": float(vals[i])
 			})
-	
-print(f"found {len(elevation_data)} points")
+
+print(f"found {len(points)} points")
+
+elevation_data = {
+	"origin": {
+		"lat": bbox.min_lat,
+		"lon": bbox.min_lon
+	},
+	"points": points
+}
 with open("elevation_data.json", "w+") as f:
 	f.write(json.dumps(elevation_data))
 
