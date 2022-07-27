@@ -240,62 +240,37 @@ while True:
 
 print("creating a base")
 
-print("make a list of edge points, and arrange it to start near the start of the river")
+print("make a list of base edge points, and arrange it to start near the start of the river")
 smallest_dist = math.inf
 smallest_dist_index = -1
 river1 = river_points[0]
 river2 = river_points[1]
-index = start_edge_vertex
-edge_points = []
-i = 0
-while True:
-	vert = rich_verts[index]
-	edge_points.append(vert)
+for i in range(v_count, len(rich_verts)):
+	vert = rich_verts[i]
 	dist1 = point_distance(vert, river1)
 	dist2 = point_distance(vert, river2)
 	if dist1 < dist2 and dist1 < smallest_dist:
 		smallest_dist = dist1
 		smallest_dist_index = i
+edge_points = rich_verts[smallest_dist_index:len(rich_verts)] + rich_verts[v_count:smallest_dist_index]
 
-	i += 1
-	index = vert.get_edge_next()
-	if index == start_edge_vertex:
-		break
-# re-arrange
-edge_points = edge_points[smallest_dist_index:] + edge_points[:smallest_dist_index]
 
-# TODO: iterate thru river points, and connect them to edge points as we go
-print("iterate thru river points to create base")
-starting_vertex_count = len(rich_verts)
+print("create base by incrementally moving each edge forward and building a triangle when you do")
 edge_index_1 = 0
 edge_index_2 = len(edge_points) - 1
-for i in range(len(river_points) - 1):
-	point = river_points[i]
-	next_point = river_points[i + 1]
-
-	new_vert = RichVertex()
-	new_vert.x = point["x"]
-	new_vert.y = point["y"]
-	new_vert.z = base_z
-	new_vert.index = starting_vertex_count + i
-	new_vert.neighbors = [] # these just blank we dont care about em
-	new_vert.triangles = [] # these just blank we dont care about em
-	rich_verts.append(new_vert)
-
-	# for both directions along the edge, connect triangles until we get to a point that is closer to the next point
-	while (point_distance(edge_points[edge_index_1], point) < point_distance(edge_points[edge_index_1], next_point)) and edge_index_1 != edge_index_2:
-		triangles.append([ new_vert.index, edge_points[edge_index_1].index, edge_points[edge_index_1 + 1].index ])
+while edge_index_1 != edge_index_2:
+	point1 = edge_points[edge_index_1]
+	point2 = edge_points[edge_index_2]
+	next_point1 = edge_points[edge_index_1 + 1]
+	next_point2 = edge_points[edge_index_2 - 1]
+	if point_distance(point1, next_point2) > point_distance(point2, next_point1):
+		triangles.append([ point1.index, next_point1.index, point2.index ])
 		edge_index_1 += 1
-		
-	while (point_distance(edge_points[edge_index_2], point) < point_distance(edge_points[edge_index_2], next_point)) and edge_index_1 != edge_index_2:
-		triangles.append([ new_vert.index, edge_points[edge_index_2].index, edge_points[edge_index_2 - 1].index ])
+	else:
+		triangles.append([ point1.index, next_point2.index, point2.index ])
 		edge_index_2 -= 1
+		
 
-
-	# at the end, create 2 triangles, one to each side, that complete the thing (unless this is the last point)
-	if i < (len(river_points) - 2):
-		triangles.append([ new_vert.index, new_vert.index + 1, edge_points[edge_index_1].index ])
-		triangles.append([ new_vert.index, edge_points[edge_index_2].index, new_vert.index + 1 ])
 
 
 print("rebuiling vertices and triangles for display")
