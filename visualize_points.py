@@ -238,9 +238,10 @@ while True:
 	index = next_index
 	count += 1
 
-print("creating a base")
 
-print("make a list of base edge points, and arrange it to start near the start of the river")
+print("creating base")
+
+# edge verts organizing
 smallest_dist = math.inf
 smallest_dist_index = -1
 river1 = river_points[0]
@@ -254,8 +255,7 @@ for i in range(v_count, len(rich_verts)):
 		smallest_dist_index = i
 edge_points = rich_verts[smallest_dist_index:len(rich_verts)] + rich_verts[v_count:smallest_dist_index]
 
-
-print("create base by incrementally moving each edge forward and building a triangle when you do")
+# base triangle creation
 edge_index_1 = 0
 edge_index_2 = len(edge_points) - 1
 while edge_index_1 != edge_index_2:
@@ -264,10 +264,10 @@ while edge_index_1 != edge_index_2:
 	next_point1 = edge_points[edge_index_1 + 1]
 	next_point2 = edge_points[edge_index_2 - 1]
 	if point_distance(point1, next_point2) > point_distance(point2, next_point1):
-		triangles.append([ point1.index, next_point1.index, point2.index ])
+		triangles.append([ point1.index, point2.index, next_point1.index ])
 		edge_index_1 += 1
 	else:
-		triangles.append([ point1.index, next_point2.index, point2.index ])
+		triangles.append([ point1.index, point2.index, next_point2.index ])
 		edge_index_2 -= 1
 		
 
