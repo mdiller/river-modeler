@@ -1,6 +1,7 @@
 import numpy as np
 import json
 import math
+import os
 import typing
 
 print("loading data")
@@ -45,28 +46,28 @@ def latlong_to_xy(point):
 
 elevation_modifier = 1
 
-print("putting vertexes in arrays")
-flat_vertex_data = []
-vertex_data = []
+print("putting vertices in arrays")
+flat_vertices = []
+vertices = []
 for point in elevation_data:
-	vertex_data.append([
+	vertices.append([
 		point["x"],
 		point["y"],
 		point["elevation"] * elevation_modifier
 	])
-	flat_vertex_data.append([
+	flat_vertices.append([
 		point["x"],
 		point["y"]
 	])
 
 
-vertices = np.array(vertex_data)
-flat_vertices = np.array(flat_vertex_data)
+vertices = np.array(vertices)
+flat_vertices = np.array(flat_vertices)
 
 # SCIPY IMPLEMENTATION
-triangle_file = "triangles.json"
+triangle_file = "cache/triangles.json"
 
-if True: # not os.path.exists(triangle_file):
+if not os.path.exists(triangle_file):
 	print("generating triangles")
 	from scipy.spatial import Delaunay
 	triangle_data = Delaunay(flat_vertices)
@@ -161,17 +162,17 @@ class RichVertex():
 		return None
 
 # also grab these values
-lowest_z = vertex_data[0][2]
-highest_z = vertex_data[0][2]
+lowest_z = vertices[0][2]
+highest_z = vertices[0][2]
 
 print("building rich vertices")
 rich_verts: typing.List[RichVertex]
 rich_verts = []
-for i in range(len(vertex_data)):
+for i in range(len(vertices)):
 	v = RichVertex()
-	v.x = vertex_data[i][0]
-	v.y = vertex_data[i][1]
-	v.z = vertex_data[i][2]
+	v.x = vertices[i][0]
+	v.y = vertices[i][1]
+	v.z = vertices[i][2]
 	v.index = i
 	v.neighbors = []
 	v.triangles = []
@@ -273,13 +274,23 @@ while edge_index_1 != edge_index_2:
 
 
 
-print("rebuiling vertices and triangles for display")
-vertices = np.array(list(map(lambda v: [v.x, v.y, v.z], rich_verts)))
-triangles = np.array(triangles).astype(np.int32)
+# print("rebuiling vertices and triangles for display")
+# vertices = np.array(list(map(lambda v: [v.x, v.y, v.z], rich_verts)))
+# triangles = np.array(triangles).astype(np.int32)
 
 print("stats: ")
-print(f" - {len(vertices)} vertices")
+print(f" - {len(rich_verts)} vertices")
 print(f" - {len(triangles)} triangles")
+
+print("exporting to json")
+data = {
+	"origin": xy_origin,
+	"vertices": list(map(lambda v: { "x": v.x, "y": v.y, "z": v.z }, rich_verts)),
+	"triangles": list(map(lambda t: [t[0], t[1], t[2]], triangles)),
+	"base_vertices": list(map(lambda v: v.index, edge_points))
+}
+with open("mesh_data.json", "w+") as f:
+	f.write(json.dumps(data))
 
 # exporting as an obj
 print("exporting to obj")
@@ -289,12 +300,12 @@ lines.append("#")
 lines.append("")
 lines.append("g river")
 lines.append("")
-lines.extend(map(lambda v: f"v {v[0]} {v[1]} {v[2]}", vertices))
+lines.extend(map(lambda v: f"v {v.x} {v.y} {v.z}", rich_verts))
 lines.append("")
 lines.extend(map(lambda t: f"f {t[0] + 1} {t[1] + 1} {t[2] + 1}", triangles))
 
 text = "\n".join(lines)
-with open("out.obj", "w+") as f:
+with open("mesh.obj", "w+") as f:
 	f.write(text)
 
 exit(0)
