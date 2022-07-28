@@ -9,8 +9,8 @@ I started with the idea of being able to 3D print a heightmap of the Rogue River
 The main todos for this project at the point of the repo's creation
 - [x] put all this stuff in a git repo
 - [x] flip x direction (i think) (should do this at end of extract_elevations)
+- [x] make the base (prolly my river following dots method)
 - [ ] round edges
-- [ ] make the base (prolly my river following dots method)
 - [ ] think about doin holes for particular rapids/milestones
   - [ ] could do toothpick-sized holes
   - [ ] manual select for locations
