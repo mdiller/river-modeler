@@ -6,3 +6,4 @@ temp/
 testgdb/
 *.tif
 data/
+__pycache__/

@@ -53,3 +53,37 @@ using https://3dviewer.net/ for helping preview obj files
   - probably connect these by creating a wall just like how we did for the edges
   - if we can do this and also create little nubs for structural connection that'd be great
 - vector multiplication for lots of this probably
+  projecting is like this:
+```py
+# using https://stackoverflow.com/questions/9605556/how-to-project-a-point-onto-a-plane-in-3d
+point_to_project = np.array([ 6, 7, 1 ])
+v = point_to_project - plane_point_np
+dist = np.dot(v, plane_normal)
+result = point_to_project - dist * plane_normal
+```
+
+
+## more thoughts on cutting in half
+- instead of moving points, would be better if we could just do an actual slice
+  - for each triangle that is sliced in half by the plane
+    - create 2 onplane points on the 2 lines that are cut by the plane
+    - create new triangles
+  - really gotta use some sample data for this
+
+
+
+# thoughts on creating wall for cut-in-half section
+- progressively work our way down thru vertices
+- maintain a list of "visible" vertices that are ones that are above our cursor, and aren't hidden by triangles yet
+- whenever a vertex is looked at or a triangle is added, say:
+  - for this vertex and it neighbors (or any of the vertexes around the triangle)
+    - is there a exposed joint that has an angle with a +z component. (some vector shit)
+    - if so, join that angle with a triangle
+      - add new triangle,
+      - mark the joint vertex of the triangle as hidden
+      - run the check on the two other vertexes of this triangle
+  - after all resolved, go to the next lowest vertex
+  - we do this all the way till we get to the top of our nubs, then gotta do custom code for that shit
+- to make the above possible, have a PlaneBuilder
+- nubs code
+  - to connect to nubs, consider the nubs an inner ring, and the remaining stuff an outer ring, and connect them together around the ring with triangles that are as small as possible

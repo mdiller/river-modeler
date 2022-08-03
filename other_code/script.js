@@ -73,21 +73,21 @@ const COOL_GRADIENT = [ "#0000ff", "#00ff00", "#ffffff" ];
 // make mesh display thing
 
 
-var pixel_size = 20;
-// draws the pixels on the given canvas, respecting the given bounds
-function drawPixelCanvas(canvas, pixels, width, height) {
-	var dimension = Math.max(width, height) * pixel_size;
-	canvas.height = dimension;
-	canvas.width = dimension;
-	var ctx = canvas.getContext("2d");
-	pixels.forEach(pixel => {
-		ctx.fillStyle = pixel.color;
-		ctx.fillRect(pixel.x * pixel_size, pixel.y * pixel_size, pixel_size, pixel_size);
-	})
-}
+// var pixel_size = 20;
+// // draws the pixels on the given canvas, respecting the given bounds
+// function drawPixelCanvas(canvas, pixels, width, height) {
+// 	var dimension = Math.max(width, height) * pixel_size;
+// 	canvas.height = dimension;
+// 	canvas.width = dimension;
+// 	var ctx = canvas.getContext("2d");
+// 	pixels.forEach(pixel => {
+// 		ctx.fillStyle = pixel.color;
+// 		ctx.fillRect(pixel.x * pixel_size, pixel.y * pixel_size, pixel_size, pixel_size);
+// 	})
+// }
 
-var divcontainer = document.getElementById("container");
-var canvas = document.getElementById("thecanvas");
+// var divcontainer = document.getElementById("container");
+// var canvas = document.getElementById("thecanvas");
 
 var pixels = [];
 var data = tiles.tiles[0].data;
@@ -153,11 +153,22 @@ var objtext = lines.join("\n");
 console.log(objtext);
 
 
-import * as modelPlayer from "js-3d-model-viewer"
-const viewerElement = document.getElementById("meshviewer")
-const opts = {
-  grid: true,
-  trackball: false
+var fs = require("fs");
+fs.writeFileSync("out.obj", objtext);
+
+var data = {
+	"vertices": vertices,
+	"triangles": triangles
 }
-const scene = modelPlayer.prepareScene(viewerElement, opts)
-modelPlayer.loadObject(scene, "./river.obj") // Urls are fine here.
+
+fs.writeFileSync("mesh_data.json", JSON.stringify(data))
+
+
+// import * as modelPlayer from "js-3d-model-viewer"
+// const viewerElement = document.getElementById("meshviewer")
+// const opts = {
+//   grid: true,
+//   trackball: false
+// }
+// const scene = modelPlayer.prepareScene(viewerElement, opts)
+// modelPlayer.loadObject(scene, "./river.obj") // Urls are fine here.

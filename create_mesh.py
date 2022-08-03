@@ -3,6 +3,38 @@ import json
 import math
 import os
 import typing
+from utils import *
+
+desired_length_mm = 450
+
+class RichVertex(Vertex):
+	index: int
+	neighbors: typing.List[int]
+	triangles: typing.List[int]
+
+	# get the next vertex along the edge
+	def get_edge_next(self):
+		counts = [0] * len(self.neighbors)
+		is_valid = [False] * len(self.neighbors)
+		for t in self.triangles:
+			tri = triangles[t]
+			last_was_us = tri[2] == self.index
+			for i in tri:
+				if i in self.neighbors:
+					index = self.neighbors.index(i)
+					is_valid[index] = last_was_us
+					counts[index] += 1
+				last_was_us = i == self.index
+
+		for i in range(len(counts)):
+			if counts[i] == 1 and is_valid[i]:
+				# print("index: ", self.index)
+				# print("neighbors: ", self.neighbors)
+				# print("triangles: ", list(map(lambda t: triangles[t], self.triangles)))
+				# print("counts: ", counts)
+				return self.neighbors[i]
+		return None
+
 
 print("loading data")
 with open("elevation_data.json", "r") as f:
@@ -11,27 +43,6 @@ with open("elevation_data.json", "r") as f:
 xy_origin = data["origin"]
 elevation_data = data["points"]
 
-
-def point_distance(p1, p2):
-	if isinstance(p1, RichVertex):
-		p1 = { "x": p1.x, "y": p1.y }
-	if isinstance(p2, RichVertex):
-		p2 = { "x": p2.x, "y": p2.y }
-	a = p2["x"] - p1["x"]
-	b = p2["y"] - p1["y"]
-	return math.sqrt(a * a + b * b)
-
-# haversine formula: gets the distance (in meters) between 2 latlong points
-def lat_long_distance(lat1, lon1, lat2, lon2):
-	radius_of_earth_meters = 6378100 # meters
-	# convert decimal degrees to radians 
-	lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
-	# haversine formula 
-	dlon = lon2 - lon1 
-	dlat = lat2 - lat1 
-	a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-	c = 2 * math.asin(math.sqrt(a)) 
-	return c * radius_of_earth_meters
 
 # give the xy coordinates of the given latlon location. (xy is just meters east&north from xy_origin)
 def latlong_to_xy(point):
@@ -65,7 +76,7 @@ vertices = np.array(vertices)
 flat_vertices = np.array(flat_vertices)
 
 # SCIPY IMPLEMENTATION
-triangle_file = "cache/triangles.json"
+triangle_file = f"cache/triangles_{len(vertices)}.json"
 
 if not os.path.exists(triangle_file):
 	print("generating triangles")
@@ -101,10 +112,13 @@ if not os.path.exists(triangle_file):
 		f.write(json.dumps(filtered_triangles))
 
 
+
 # ADDING POINTS FOR UNDERSIDE AND EDGES
 with open(triangle_file, "r") as f:
 	triangles = json.loads(f.read())
 	# triangles = np.array(json.loads(f.read())).astype(np.int32)
+
+
 
 # print("computing edge lines")
 # existing_edges = set()
@@ -130,36 +144,6 @@ with open(triangle_file, "r") as f:
 # 	outside_points.add(edge[1])
 # print("edge verts: ", len(outside_edges))
 
-class RichVertex():
-	x: float
-	y: float
-	z: float
-	index: int
-	neighbors: typing.List[int]
-	triangles: typing.List[int]
-
-	# get the next vertex along the edge
-	def get_edge_next(self):
-		counts = [0] * len(self.neighbors)
-		is_valid = [False] * len(self.neighbors)
-		for t in self.triangles:
-			tri = triangles[t]
-			last_was_us = tri[2] == self.index
-			for i in tri:
-				if i in self.neighbors:
-					index = self.neighbors.index(i)
-					is_valid[index] = last_was_us
-					counts[index] += 1
-				last_was_us = i == self.index
-
-		for i in range(len(counts)):
-			if counts[i] == 1 and is_valid[i]:
-				# print("index: ", self.index)
-				# print("neighbors: ", self.neighbors)
-				# print("triangles: ", list(map(lambda t: triangles[t], self.triangles)))
-				# print("counts: ", counts)
-				return self.neighbors[i]
-		return None
 
 # also grab these values
 lowest_z = vertices[0][2]
@@ -214,7 +198,6 @@ v_count = len(rich_verts)
 count = 0
 index = start_edge_vertex
 while True:
-	# TODO: NOW WE DO STUFF HERE FOR EACH VERTEX, PROLLY JUST ADD A NEW ONE BELOW THIS AND THE NEXT ONE, AND THEN CREATE TRIANGLES FOR EM
 	vert = rich_verts[index]
 	next_index = vert.get_edge_next()
 	next_vert = rich_verts[next_index]
@@ -264,28 +247,42 @@ while edge_index_1 != edge_index_2:
 	point2 = edge_points[edge_index_2]
 	next_point1 = edge_points[edge_index_1 + 1]
 	next_point2 = edge_points[edge_index_2 - 1]
+	if point1.index == next_point2.index or point2.index == next_point1.index:
+		break # we done
 	if point_distance(point1, next_point2) > point_distance(point2, next_point1):
 		triangles.append([ point1.index, point2.index, next_point1.index ])
 		edge_index_1 += 1
 	else:
 		triangles.append([ point1.index, point2.index, next_point2.index ])
 		edge_index_2 -= 1
-		
 
+print("find farthest apart base verts")
+best_dist = 0
+for i in range(len(edge_points)):
+	for j in range(len(edge_points)):
+		dist = point_distance(edge_points[i], edge_points[j])
+		if dist > best_dist:
+			best_dist = dist
 
-
-# print("rebuiling vertices and triangles for display")
-# vertices = np.array(list(map(lambda v: [v.x, v.y, v.z], rich_verts)))
-# triangles = np.array(triangles).astype(np.int32)
+print(f"resizing to be {desired_length_mm} mm long (assuming input units are meters)")
+current_length_m = best_dist
+scale = desired_length_mm / current_length_m
+print(f"- scale is {scale}")
+for vertex in rich_verts:
+	vertex.x *= scale
+	vertex.y *= scale
+	vertex.z *= scale
 
 print("stats: ")
 print(f" - {len(rich_verts)} vertices")
 print(f" - {len(triangles)} triangles")
 
+
 print("exporting to json")
 data = {
+	"scale": scale,
 	"origin": xy_origin,
-	"vertices": list(map(lambda v: { "x": v.x, "y": v.y, "z": v.z }, rich_verts)),
+	"vertices": list(map(lambda v: v.toJson(), rich_verts)),
 	"triangles": list(map(lambda t: [t[0], t[1], t[2]], triangles)),
 	"base_vertices": list(map(lambda v: v.index, edge_points))
 }
@@ -294,18 +291,6 @@ with open("mesh_data.json", "w+") as f:
 
 # exporting as an obj
 print("exporting to obj")
-lines = []
-lines.append("# river.obj")
-lines.append("#")
-lines.append("")
-lines.append("g river")
-lines.append("")
-lines.extend(map(lambda v: f"v {v.x} {v.y} {v.z}", rich_verts))
-lines.append("")
-lines.extend(map(lambda t: f"f {t[0] + 1} {t[1] + 1} {t[2] + 1}", triangles))
-
-text = "\n".join(lines)
-with open("mesh.obj", "w+") as f:
-	f.write(text)
+dump_to_obj("mesh.obj", rich_verts, triangles)
 
 exit(0)
