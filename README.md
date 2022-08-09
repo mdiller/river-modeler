@@ -10,7 +10,7 @@ The main todos for this project at the point of the repo's creation
 - [x] put all this stuff in a git repo
 - [x] flip x direction (i think) (should do this at end of extract_elevations)
 - [x] make the base (prolly my river following dots method)
-- [ ] round edges
+- [x] make little nubs to make a reliable glue connection
 - [ ] think about doin holes for particular rapids/milestones
   - [ ] could do toothpick-sized holes
   - [ ] manual select for locations
@@ -22,6 +22,8 @@ Heres some more todos that are lower priority but would be nice to do after i st
   - [ ] need a better way of passing the data between parts of the script
 - [ ] make it run on a website so other people could use it (python webassembly probably)
   - [ ] make input/search boxes based on osm for selecting river, start/end points, and points of interest
+- [ ] make an explanation of each part of the code, possibly with visuals
+  - this would be needed to make it readable really, as visuals are important for understanding whats going on
 
 # libraries
 - rasterio
@@ -32,58 +34,7 @@ Heres some more todos that are lower priority but would be nice to do after i st
 https://www.openstreetmap.org/way/425061030#map=11/42.5708/-123.8434&layers=Y
 using https://3dviewer.net/ for helping preview obj files
 
-# notes
 
-## for cutting in half
-- try to do this incrementally and as soon as we remove half of the points, do that.
-- get the line from start of river to end (this is our river-direction)
-- generate rich verts again
-- sort all verts (and triangles?) by how far they are along the river-direction
-  - this can be used to more easily find points near plane-cutting surfaces
-  - this can also be used to more easily find points to poke little holes in
-  - could cache this and the other pre-calculations in a json file for faster iteration
-- do hole-creation before doing plane-cutting
-- find all the triangle edges that go thru our new plane
-- now for each of those edges, do the following (for each side of our object)
-  - take the vertex(s) that is past our plane and scoot it back to be exactly on our plane
-  - for each vertex we scooted, remove all connections to triangles not in our new object
-- now just need to grab all scooted vertices, and connect them as a polygon
-  - scooting is prolly using something like this https://stackoverflow.com/questions/46978948/move-a-vertex-along-a-plane-given-the-plane-normal or https://stackoverflow.com/questions/9605556/how-to-project-a-point-onto-a-plane-in-3d
-  - can find the right order by lookin thru neighbors for other vertices that got scooted (in clockwise triangle order)
-  - probably connect these by creating a wall just like how we did for the edges
-  - if we can do this and also create little nubs for structural connection that'd be great
-- vector multiplication for lots of this probably
-  projecting is like this:
-```py
-# using https://stackoverflow.com/questions/9605556/how-to-project-a-point-onto-a-plane-in-3d
-point_to_project = np.array([ 6, 7, 1 ])
-v = point_to_project - plane_point_np
-dist = np.dot(v, plane_normal)
-result = point_to_project - dist * plane_normal
-```
-
-
-## more thoughts on cutting in half
-- instead of moving points, would be better if we could just do an actual slice
-  - for each triangle that is sliced in half by the plane
-    - create 2 onplane points on the 2 lines that are cut by the plane
-    - create new triangles
-  - really gotta use some sample data for this
-
-
-
-# thoughts on creating wall for cut-in-half section
-- progressively work our way down thru vertices
-- maintain a list of "visible" vertices that are ones that are above our cursor, and aren't hidden by triangles yet
-- whenever a vertex is looked at or a triangle is added, say:
-  - for this vertex and it neighbors (or any of the vertexes around the triangle)
-    - is there a exposed joint that has an angle with a +z component. (some vector shit)
-    - if so, join that angle with a triangle
-      - add new triangle,
-      - mark the joint vertex of the triangle as hidden
-      - run the check on the two other vertexes of this triangle
-  - after all resolved, go to the next lowest vertex
-  - we do this all the way till we get to the top of our nubs, then gotta do custom code for that shit
-- to make the above possible, have a PlaneBuilder
-- nubs code
-  - to connect to nubs, consider the nubs an inner ring, and the remaining stuff an outer ring, and connect them together around the ring with triangles that are as small as possible
+# last considerations before printing:
+- maybe do the holes for the toothpicks things for the milestones
+- maybe do the holes for mounting

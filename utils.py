@@ -25,6 +25,7 @@ class Vertex():
 			self.y,
 			self.z
 		])
+	
 	def __repr__(self):
 		return f"(x: {self.x} y: {self.y} z: {self.z})"
 
