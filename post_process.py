@@ -10,9 +10,9 @@ import os
 from utils import *
 
 should_generate_nubs = True
-NubDimensions = namedtuple("NubDimensions", "height width padding depth clearance chamfers")
-nub_dimensions_mm = NubDimensions(3, 6, 1, 6, 0.2, 0.1)
-chunk_amount = 10
+NubDimensions = namedtuple("NubDimensions", "height width depth padding clearance chamfers")
+nub_dimensions_mm = NubDimensions(2, 4, 6, 1, 0.2, 0.1)
+chunk_amount = 2
 
 def get_point_plane_intersect(p0: Vertex, p1: Vertex, plane_point: Vertex, plane_normal):
 	result = isect_line_plane_v3(
@@ -448,7 +448,7 @@ class WallBuilder():
 			if self.is_triangle_valid(vert):
 				add_weight(vert)
 
-		while len(self.edge_verts) >= 3 or len(triangle_weights) == 0:
+		while len(self.edge_verts) >= 3 and len(triangle_weights) > 0:
 			vert = triangle_weights[0].vert
 			neighbors = self.neighbor_info[vert]
 			self.create_wall_triangle(vert)

@@ -7,3 +7,6 @@ testgdb/
 *.tif
 data/
 __pycache__/
+
+*.stl
+*.3mf
